@@ -1,24 +1,16 @@
-# AI Engineer Portfolio - Production Dependencies
-# Core framework with visual asset integration
+# Core Framework - NiceGUI for interactive portfolio
 nicegui>=1.4.0,<2.0.0
-uvicorn>=0.24.0,<1.0.0
 
-# Essential utilities
+# Essential Dependencies
 requests>=2.31.0,<3.0.0
 python-dotenv>=1.0.0,<2.0.0
 
-# Data validation and configuration
+# Configuration and Validation
 pydantic>=2.5.0,<3.0.0
+pydantic-settings>=2.1.0,<3.0.0
 
-# Image processing (for future enhancements)
+# Image Processing (for portfolio assets)
 pillow>=10.0.0,<11.0.0
 
-# Email functionality (optional)
-# Uncomment if you want to enable actual email sending
-# python-multipart>=0.0.6,<1.0.0
-
-# Development dependencies (optional)
-# Uncomment for development
-# pytest>=7.4.0,<8.0.0
-# black>=23.0.0,<24.0.0
-# flake8>=6.0.0,<7.0.0
+# Logging and Utilities
+uvicorn>=0.24.0,<1.0.0
