@@ -1,133 +1,166 @@
-"""Advanced professional visual asset management system for AI Engineer portfolio"""
+"""Advanced professional visual asset management system with project-specific categories"""
 
 import hashlib
-import requests
-from typing import Dict, List, Optional
-from urllib.parse import quote
 import logging
+from typing import Dict, List, Optional
+from dataclasses import dataclass
+import requests
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class ImageAsset:
+    """Represents a professional image asset with fallback options"""
+    primary_url: str
+    fallback_url: str
+    alt_text: str
+    category: str
+    width: int = 1200
+    height: int = 800
+
+
 class ProfessionalAssetManager:
-    """Advanced professional visual asset management system with AI/tech focus"""
+    """Advanced professional visual asset management system"""
     
+    # AI Engineer specific image categories
     AI_ENGINEER_CATEGORIES = {
         "hero": [
-            "artificial intelligence", "machine learning", "data science", 
-            "neural networks", "technology", "coding"
+            "artificial intelligence", "machine learning", "data science",
+            "technology", "coding", "computer science", "innovation"
         ],
         "professional": [
-            "professional", "workspace", "coding", "developer", 
-            "technology", "computer science"
+            "professional", "workspace", "office", "technology",
+            "developer", "engineer", "modern office", "computer setup"
         ],
         "projects": [
-            "data visualization", "artificial intelligence", "machine learning",
-            "computer vision", "neural networks", "algorithms", "robotics",
-            "deep learning", "data analysis", "technology innovation"
+            "data visualization", "neural networks", "algorithms",
+            "computer vision", "robotics", "automation", "analytics",
+            "deep learning", "ai research", "machine learning models"
         ],
         "skills": [
-            "brain", "network", "algorithm", "data", "analytics", 
-            "artificial intelligence", "machine learning", "technology"
+            "programming", "python", "tensorflow", "pytorch",
+            "data analysis", "statistics", "mathematics", "algorithms"
         ],
-        "experience": [
-            "teamwork", "collaboration", "office", "technology", 
-            "professional", "business", "innovation"
+        "team": [
+            "teamwork", "collaboration", "tech team", "developers",
+            "meeting", "brainstorming", "agile", "startup"
         ],
-        "contact": [
-            "communication", "network", "professional", "connection",
-            "technology", "collaboration"
+        "innovation": [
+            "innovation", "future technology", "ai", "research",
+            "breakthrough", "cutting edge", "digital transformation"
         ]
     }
     
-    FALLBACK_IMAGES = {
-        "hero": "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=1200&h=800&fit=crop",
-        "professional": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop",
-        "projects": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=350&h=200&fit=crop",
-        "skills": "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=300&h=200&fit=crop",
-        "experience": "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&h=250&fit=crop",
-        "contact": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=300&fit=crop"
-    }
-    
-    def __init__(self):
-        self.cache = {}
-        self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'AI-Engineer-Portfolio/1.0 (Professional Portfolio Application)'
-        })
-    
-    def get_ai_engineer_assets(self, sections: Optional[List[str]] = None) -> Dict[str, List[Dict[str, str]]]:
-        """Fetch contextually relevant professional images for AI engineer portfolio"""
+    def __init__(self, cache_dir: Optional[Path] = None):
+        """Initialize the asset manager with optional caching"""
+        self.cache_dir = cache_dir or Path("app/static/cache")
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
         
-        if sections is None:
-            sections = list(self.AI_ENGINEER_CATEGORIES.keys())
+    def get_ai_engineer_assets(self, sections_count: int = 6) -> Dict[str, List[ImageAsset]]:
+        """Get contextually relevant professional images for AI engineer portfolio"""
         
         assets = {}
         
-        for section in sections:
-            if section not in self.AI_ENGINEER_CATEGORIES:
-                continue
-                
-            section_images = []
-            keywords = self.AI_ENGINEER_CATEGORIES[section]
+        for section, keywords in self.AI_ENGINEER_CATEGORIES.items():
+            section_assets = []
             
-            # Generate multiple images per section
-            images_per_section = 3 if section == 'projects' else 2
-            
-            for i in range(images_per_section):
+            for i in range(min(sections_count, len(keywords))):
                 keyword = keywords[i % len(keywords)]
-                seed = self._generate_seed(f"ai_engineer_{section}_{i}")
-                
-                # Create multiple image sources for reliability
-                primary_url = self._build_unsplash_url(keyword, 1200, 800, seed)
-                secondary_url = self._build_picsum_url(1200, 800, seed)
-                fallback_url = self.FALLBACK_IMAGES.get(section, self.FALLBACK_IMAGES['hero'])
-                
-                section_images.append({
-                    "primary": primary_url,
-                    "secondary": secondary_url,
-                    "fallback": fallback_url,
-                    "alt": f"Professional {keyword} imagery for AI engineer portfolio {section}",
-                    "keyword": keyword
-                })
+                asset = self._create_image_asset(keyword, section, i)
+                section_assets.append(asset)
             
-            assets[section] = section_images
+            assets[section] = section_assets
         
         return assets
     
-    def _generate_seed(self, input_string: str) -> int:
-        """Generate a consistent seed for image selection"""
-        return int(hashlib.md5(input_string.encode()).hexdigest()[:8], 16) % 10000
+    def _create_image_asset(self, keyword: str, section: str, index: int) -> ImageAsset:
+        """Create an image asset with multiple fallback options"""
+        
+        # Generate consistent seed for reproducible images
+        seed = abs(hash(f"{keyword}_{section}_{index}")) % 10000
+        
+        # Primary source: Unsplash with specific keyword
+        primary_url = f"https://source.unsplash.com/1200x800/?{keyword.replace(' ', '+')}&sig={seed}"
+        
+        # Fallback source: Lorem Picsum with seed
+        fallback_url = f"https://picsum.photos/1200/800?random={seed}"
+        
+        # Generate descriptive alt text
+        alt_text = f"Professional {keyword} imagery for {section} section"
+        
+        return ImageAsset(
+            primary_url=primary_url,
+            fallback_url=fallback_url,
+            alt_text=alt_text,
+            category=section,
+            width=1200,
+            height=800
+        )
     
-    def _build_unsplash_url(self, keyword: str, width: int, height: int, seed: int) -> str:
-        """Build Unsplash Source URL with proper encoding"""
-        encoded_keyword = quote(keyword.replace(' ', ','))
-        return f"https://source.unsplash.com/{width}x{height}/?{encoded_keyword}&sig={seed}"
-    
-    def _build_picsum_url(self, width: int, height: int, seed: int) -> str:
-        """Build Lorem Picsum URL as secondary source"""
-        return f"https://picsum.photos/{width}/{height}?random={seed}"
+    def get_optimized_image_url(self, asset: ImageAsset, width: int = None, height: int = None) -> str:
+        """Get optimized image URL for specific dimensions"""
+        
+        if width and height:
+            # Try to get optimized version from Unsplash
+            if "unsplash" in asset.primary_url:
+                base_url = asset.primary_url.split('?')[0]
+                params = asset.primary_url.split('?')[1] if '?' in asset.primary_url else ""
+                return f"{base_url.replace('1200x800', f'{width}x{height}')}?{params}"
+            
+            # Fallback to Picsum with custom dimensions
+            seed = abs(hash(asset.primary_url)) % 10000
+            return f"https://picsum.photos/{width}/{height}?random={seed}"
+        
+        return asset.primary_url
     
     def validate_image_url(self, url: str) -> bool:
         """Validate if an image URL is accessible"""
+        
         try:
-            response = self.session.head(url, timeout=5)
+            response = requests.head(url, timeout=5)
             return response.status_code == 200
         except Exception as e:
             logger.warning(f"Image validation failed for {url}: {e}")
             return False
     
-    def get_optimized_image_css(self) -> str:
-        """Generate CSS for optimized image handling"""
+    def get_placeholder_image(self, width: int = 1200, height: int = 800, text: str = "Portfolio") -> str:
+        """Get a placeholder image with custom text"""
+        
+        # Use a reliable placeholder service
+        return f"https://via.placeholder.com/{width}x{height}/667eea/ffffff?text={text.replace(' ', '+')}"
+    
+    @staticmethod
+    def generate_image_css() -> str:
+        """Generate CSS for professional image handling with modern styling"""
+        
         return """
-        /* AI Engineer Portfolio Image System */
+        /* Professional Image System with Modern Styling */
         .hero-image {
             width: 100%;
             height: 500px;
             object-fit: cover;
-            border-radius: 15px;
+            border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
+        }
+        
+        .hero-image:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+        }
+        
+        .project-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .project-image:hover {
+            transform: scale(1.05);
         }
         
         .professional-image {
@@ -135,26 +168,64 @@ class ProfessionalAssetManager:
             height: 300px;
             object-fit: cover;
             border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
         }
         
-        .project-image {
+        .skills-image {
             width: 100%;
             height: 200px;
             object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-        
-        .project-image:hover {
-            transform: scale(1.05);
-        }
-        
-        .skill-image {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 10px;
+            border-radius: 12px;
             opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+        
+        .skills-image:hover {
+            opacity: 1;
+        }
+        
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .image-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .image-card:hover {
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            transform: translateY(-8px);
+        }
+        
+        .image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                to bottom, 
+                transparent 0%, 
+                rgba(102, 126, 234, 0.8) 100%
+            );
+            display: flex;
+            align-items: flex-end;
+            padding: 1.5rem;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .image-card:hover .image-overlay {
+            opacity: 1;
         }
         
         .image-loading {
@@ -169,65 +240,60 @@ class ProfessionalAssetManager:
         }
         
         .image-error {
-            background: #f8f9fa;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #6c757d;
-            font-size: 0.9rem;
+            color: white;
+            font-weight: 500;
         }
         
-        /* Responsive image handling */
+        /* Responsive Design */
         @media (max-width: 768px) {
             .hero-image {
                 height: 300px;
+                border-radius: 15px;
             }
             
             .professional-image {
                 height: 250px;
             }
             
-            .project-image {
-                height: 180px;
+            .gallery-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .image-card {
+                border-radius: 15px;
             }
         }
         
-        /* Lazy loading optimization */
-        .lazy-image {
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        
-        .lazy-image.loaded {
-            opacity: 1;
+        @media (max-width: 480px) {
+            .hero-image {
+                height: 250px;
+                border-radius: 12px;
+            }
+            
+            .project-image,
+            .professional-image {
+                height: 200px;
+            }
         }
         """
     
-    def get_project_specific_images(self, project_type: str, count: int = 1) -> List[Dict[str, str]]:
-        """Get images specific to a project type"""
+    def get_section_specific_assets(self, section: str, count: int = 3) -> List[ImageAsset]:
+        """Get assets for a specific portfolio section"""
         
-        project_keywords = {
-            "computer_vision": ["computer vision", "image recognition", "opencv", "deep learning"],
-            "nlp": ["natural language processing", "text analysis", "chatbot", "language model"],
-            "recommendation": ["recommendation system", "machine learning", "data analysis", "algorithms"],
-            "data_science": ["data science", "analytics", "visualization", "statistics"],
-            "robotics": ["robotics", "automation", "artificial intelligence", "technology"],
-            "deep_learning": ["deep learning", "neural networks", "tensorflow", "pytorch"]
-        }
+        if section not in self.AI_ENGINEER_CATEGORIES:
+            section = "professional"  # Default fallback
         
-        keywords = project_keywords.get(project_type, ["artificial intelligence", "machine learning"])
-        images = []
+        keywords = self.AI_ENGINEER_CATEGORIES[section]
+        assets = []
         
-        for i in range(count):
-            keyword = keywords[i % len(keywords)]
-            seed = self._generate_seed(f"{project_type}_{i}")
-            
-            images.append({
-                "primary": self._build_unsplash_url(keyword, 350, 200, seed),
-                "secondary": self._build_picsum_url(350, 200, seed),
-                "fallback": self.FALLBACK_IMAGES["projects"],
-                "alt": f"{project_type.replace('_', ' ').title()} project visualization",
-                "keyword": keyword
-            })
+        for i in range(min(count, len(keywords))):
+            keyword = keywords[i]
+            asset = self._create_image_asset(keyword, section, i)
+            assets.append(asset)
         
-        return images
+        return assets
