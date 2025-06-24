@@ -1,4 +1,3 @@
-# Docker Compose configuration for AI Engineer Portfolio
 version: '3.8'
 
 services:
@@ -7,31 +6,37 @@ services:
     ports:
       - "8080:8080"
     environment:
+      - DEBUG=false
       - HOST=0.0.0.0
       - PORT=8080
-      - DEBUG=false
+    env_file:
+      - .env
     volumes:
-      - ./app/static/documents:/app/app/static/documents
+      - ./app/static/uploads:/app/app/static/uploads
+      - ./app/static/files:/app/app/static/files
+      - ./logs:/app/logs
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8080', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
 
-  # Optional: Add nginx reverse proxy for production
-  # nginx:
-  #   image: nginx:alpine
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
-  #     - ./ssl:/etc/nginx/ssl:ro
-  #   depends_on:
-  #     - portfolio
-  #   restart: unless-stopped
+  # Optional: Add nginx for production
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./app/static:/var/www/static:ro
+    depends_on:
+      - portfolio
+    restart: unless-stopped
+    profiles:
+      - production
 
 networks:
   default:
