@@ -1,4 +1,4 @@
-"""UI components package for the AI Engineer Portfolio"""
+"""UI Components package for the portfolio application"""
 
 from .portfolio_components import (
     HeroSection, AboutSection, SkillsSection,
