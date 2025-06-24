@@ -1,4 +1,8 @@
-# This file makes the 'app' directory a Python package.
-# It can be used for package-level initializations if needed in the future.
-# For the current NiceGUI setup, project_base/main.py directly imports app.main
-# to ensure NiceGUI pages are registered before ui.run() is called.
+"""AI Engineer Portfolio Application Package
+
+This package contains a professional portfolio application for AI engineers,
+featuring interactive components, project showcases, and contact functionality.
+"""
+
+__version__ = "1.0.0"
+__author__ = "AI Engineer Portfolio"
