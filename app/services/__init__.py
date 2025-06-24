@@ -1,2 +1,5 @@
-# This file makes this directory a Python package.
-# It's part of the project structure defined in pythoncode.txt.
+"""Services package for the AI Engineer Portfolio application"""
+
+from .portfolio_service import PortfolioService
+
+__all__ = ["PortfolioService"]
