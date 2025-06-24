@@ -1,4 +1,4 @@
-# Multi-stage production-ready containerization for AI Engineer Portfolio
+# Multi-stage production-ready containerization with asset optimization
 FROM python:3.11-slim as builder
 
 # Set environment variables
@@ -9,8 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
+    gcc \
     && rm -rf /var/lib/apt/lists/*
 
 # Create and set working directory
@@ -29,13 +28,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PORT=8080 \
     HOST=0.0.0.0
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && groupadd -r appuser && useradd -r -g appuser appuser
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
 
-# Set working directory
+# Create and set working directory
 WORKDIR /app
 
 # Copy Python packages from builder stage
@@ -46,18 +42,18 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY . .
 
 # Create necessary directories and set permissions
-RUN mkdir -p app/static/documents && \
+RUN mkdir -p app/static/uploads app/static/files app/static/cache logs && \
     chown -R appuser:appuser /app
 
 # Switch to non-root user
 USER appuser
 
+# Expose port
+EXPOSE 8080
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT}/health || exit 1
-
-# Expose port
-EXPOSE ${PORT}
+    CMD python -c "import requests; requests.get('http://localhost:8080', timeout=5)" || exit 1
 
 # Run the application
 CMD ["python", "main.py"]
